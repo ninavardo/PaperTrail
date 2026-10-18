@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/source-serif-4-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/source-serif-4-latin-400-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/source-serif-4-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2");
+}
+
+/* Only the tokens below exist: Tailwind's default palette, fonts, radii,
+   shadows and type scale are removed so they cannot be used by accident. */
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --blur-*: initial;
+  --text-*: initial;
+
+  /* "paper" is the surface, "ink" is the mark; dark mode swaps their values. */
+  --color-paper: #f2eee3;
+  --color-ink: #1b1b18;
+  --color-muted: #5a5648;
+  --color-rule: #cfc8b4;
+  --color-stamp: #b3261e;
+  --color-ledger: #2f5d3a;
+
+  --font-serif: "Source Serif 4", serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1.5;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.5;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.6;
+  --text-lead: 1.375rem;
+  --text-lead--line-height: 1.4;
+  --text-fact: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem);
+  --text-fact--line-height: 1.22;
+
+  --radius-none: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper: #16160f;
+    --color-ink: #f2eee3;
+    --color-muted: #9a9480;
+    --color-rule: #3a3a2e;
+    --color-stamp: #c98a84;
+    --color-ledger: #8fb096;
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+  body {
+    font-family: var(--font-serif);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-variant-numeric: tabular-nums lining-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  * {
+    border-radius: 0;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-stamp);
+    outline-offset: 2px;
+  }
+  a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  input[type="radio"],
+  input[type="checkbox"] {
+    accent-color: var(--color-ink);
+  }
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+}
+
+@layer components {
+  /* Thin double rule under the masthead. */
+  .double-rule {
+    border-bottom: 3px double var(--color-ink);
+  }
+  .meta {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Main column plus a narrow right margin for marginalia. */
+  .ledger {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+  @media (min-width: 52rem) {
+    .ledger {
+      grid-template-columns: minmax(0, 1fr) 13rem;
+      gap: 3rem;
+    }
+    .ledger > .marginalia {
+      border-left: 1px solid var(--color-rule);
+      padding-left: 1.25rem;
+    }
+  }
+  .btn {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--color-ink);
+    padding: 0.6rem 1.1rem;
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn:disabled {
+    cursor: progress;
+    color: var(--color-muted);
+    border-color: var(--color-muted);
+  }
+  .field {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    border: 0;
+    border-bottom: 1px solid var(--color-ink);
+    background: transparent;
+    color: var(--color-ink);
+    padding: 0.25rem 0.1rem;
+  }
+  /* Range inputs drawn as a 1px rule with a square marker. */
+  input[type="range"].rule-range {
+    appearance: none;
+    background: transparent;
+    height: 1.5rem;
+    cursor: pointer;
+  }
+  input[type="range"].rule-range::-webkit-slider-runnable-track {
+    height: 1px;
+    background: var(--color-ink);
+  }
+  input[type="range"].rule-range::-moz-range-track {
+    height: 1px;
+    background: var(--color-ink);
+  }
+  input[type="range"].rule-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 0.9rem;
+    height: 0.9rem;
+    margin-top: calc(-0.45rem + 0.5px);
+    background: var(--color-ink);
+    border: 0;
+    border-radius: 0;
+  }
+  input[type="range"].rule-range::-moz-range-thumb {
+    width: 0.9rem;
+    height: 0.9rem;
+    background: var(--color-ink);
+    border: 0;
+    border-radius: 0;
+  }
+  .stamp {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-stamp);
+    border: 2px solid var(--color-stamp);
+    outline: 1px solid var(--color-stamp);
+    outline-offset: 2px;
+    padding: 0.2rem 0.55rem;
+    transform: rotate(2deg);
+  }
+  .stamp-ledger {
+    color: var(--color-ledger);
+    border-color: var(--color-ledger);
+    outline-color: var(--color-ledger);
+  }
+  .stamp-down {
+    animation: stamp-down 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  }
+  .sr-only-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@keyframes stamp-down {
+  0% {
+    opacity: 0;
+    transform: rotate(2deg) scale(1.8);
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(2deg) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(2deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
