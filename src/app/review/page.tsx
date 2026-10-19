@@ -19,7 +19,7 @@ export default async function ReviewPage() {
   const anonId = await readAnonId();
   const db = getDb();
   const now = new Date();
-  const queue = anonId ? reviewQueue(db, anonId, now) : { due: [], upcoming: [] };
+  const queue = anonId ? await reviewQueue(db, anonId, now) : { due: [], upcoming: [] };
 
   if (queue.due.length === 0) {
     return (
@@ -59,7 +59,7 @@ export default async function ReviewPage() {
       entryLabel={label}
       redactedSentence={redactYears(item.fact.sentence)}
       category={item.fact.category}
-      puzzle={reviewPuzzle(db, item.fact, now)}
+      puzzle={await reviewPuzzle(db, item.fact, now)}
       initialReveal={null}
       afterReveal={<NextReviewButton />}
     />

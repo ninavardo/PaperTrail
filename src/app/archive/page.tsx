@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 export default async function ArchivePage({ searchParams }: PageProps<"/archive">) {
   const query = parseArchiveQuery(await searchParams);
   const db = getDb();
-  const facets = archiveFacets(db);
-  const results = searchArchive(db, query);
+  const facets = await archiveFacets(db);
+  const results = await searchArchive(db, query);
   const filtered = Object.keys(query).length > 0;
 
   return (

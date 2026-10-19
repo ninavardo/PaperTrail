@@ -6,7 +6,7 @@ import { getFact } from "./queries";
 const factIdSchema = z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 
 /** Resolves a permalink segment such as "11" to its fact, or null. */
-export function factFromParam(id: string): FactWithSources | null {
+export async function factFromParam(id: string): Promise<FactWithSources | null> {
   if (!/^\d+$/.test(id)) return null;
   const parsed = factIdSchema.safeParse(id);
   return parsed.success ? getFact(getDb(), parsed.data) : null;

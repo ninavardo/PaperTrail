@@ -14,23 +14,19 @@ export type Profile = {
   wrong: WrongEntry[];
 };
 
-export function guessesFor(db: Db, anonId: string): Guess[] {
+export async function guessesFor(db: Db, anonId: string): Promise<Guess[]> {
   return db.select().from(guesses).where(eq(guesses.anonId, anonId)).orderBy(asc(guesses.createdAt), asc(guesses.id)).all();
 }
 
-export function buildProfile(db: Db, anonId: string, now: Date): Profile {
-  const all = guessesFor(db, anonId);
+export async function buildProfile(db: Db, anonId: string, now: Date): Promise<Profile> {
+  const all = await guessesFor(db, anonId);
 
   const firstByFact = new Map<number, Guess>();
   for (const g of all) if (!firstByFact.has(g.factId)) firstByFact.set(g.factId, g);
   const wrongFirst = [...firstByFact.values()].filter((g) => !g.correct);
 
   const sentences = new Map(
-    db
-      .select({ id: facts.id, sentence: facts.sentence })
-      .from(facts)
-      .all()
-      .map((f) => [f.id, f.sentence]),
+    (await db.select({ id: facts.id, sentence: facts.sentence }).from(facts).all()).map((f) => [f.id, f.sentence]),
   );
 
   return {

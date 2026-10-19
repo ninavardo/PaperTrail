@@ -74,16 +74,16 @@ export async function checkUrl(url: string, timeoutMs = 15_000): Promise<{ statu
   }
 }
 
-export function recordResults(db: Db, results: CheckResult[], checkedAt: Date): void {
-  db.transaction((tx) => {
+export async function recordResults(db: Db, results: CheckResult[], checkedAt: Date): Promise<void> {
+  await db.transaction(async (tx) => {
     for (const r of results) {
-      tx.update(sources).set({ lastStatusCode: r.status, lastCheckedAt: checkedAt }).where(eq(sources.id, r.sourceId)).run();
+      await tx.update(sources).set({ lastStatusCode: r.status, lastCheckedAt: checkedAt }).where(eq(sources.id, r.sourceId)).run();
     }
   });
 }
 
-export function factLinks(db: Db): FactLinks[] {
-  const rows = db
+export async function factLinks(db: Db): Promise<FactLinks[]> {
+  const rows = await db
     .select({ factId: facts.id, status: facts.status, sourceStatus: sources.lastStatusCode, checkedAt: sources.lastCheckedAt })
     .from(facts)
     .innerJoin(sources, eq(sources.factId, facts.id))
@@ -97,7 +97,7 @@ export function factLinks(db: Db): FactLinks[] {
   return [...byFact.values()];
 }
 
-export function markDisputed(db: Db, factIds: number[]): void {
+export async function markDisputed(db: Db, factIds: number[]): Promise<void> {
   if (factIds.length === 0) return;
-  db.update(facts).set({ status: "disputed" }).where(inArray(facts.id, factIds)).run();
+  await db.update(facts).set({ status: "disputed" }).where(inArray(facts.id, factIds)).run();
 }

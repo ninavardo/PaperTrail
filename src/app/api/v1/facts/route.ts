@@ -6,11 +6,11 @@ import { searchArchive } from "@/lib/archive";
 export const dynamic = "force-dynamic";
 
 /** Verified and disputed facts, oldest first. Retired facts are not listed. */
-export const GET = publicApi((request: NextRequest) => {
+export const GET = publicApi(async (request: NextRequest) => {
   const query = parseQuery(request, categoryQuerySchema);
   if (!query.ok) return query.response;
 
-  const facts = searchArchive(getDb(), { category: query.data.category }).map((f) =>
+  const facts = (await searchArchive(getDb(), { category: query.data.category })).map((f) =>
     toApiFact(f, request.nextUrl.origin),
   );
   return Response.json({ count: facts.length, facts }, { headers: { "Cache-Control": "public, max-age=300" } });

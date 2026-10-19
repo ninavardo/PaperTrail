@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { openDb } from "@/db/client";
+import { migrate } from "@/db/migrate";
 import { createFact } from "./facts";
 import { factLinks, factsRecovered, factsToDispute, isDead, markDisputed, recordResults, softNotFound } from "./link-check";
 import { getFact } from "./queries";
@@ -52,11 +53,12 @@ describe("factsToDispute", () => {
 });
 
 describe("recording results", () => {
-  it("stores status and time, then flags the fact whose sources are all dead", () => {
-    const { db } = openDb(":memory:");
+  it("stores status and time, then flags the fact whose sources are all dead", async () => {
+    const { db, client } = openDb(":memory:");
+    await migrate(client);
     const base = { category: "money", year: 1900, grade: "B" as const };
-    const a = createFact(db, { ...base, sentence: "A.", sources: [{ url: "https://a.example/1", publisher: "A", quote: "a" }] });
-    const b = createFact(db, {
+    const a = await createFact(db, { ...base, sentence: "A.", sources: [{ url: "https://a.example/1", publisher: "A", quote: "a" }] });
+    const b = await createFact(db, {
       ...base,
       sentence: "B.",
       sources: [
@@ -64,21 +66,25 @@ describe("recording results", () => {
         { url: "https://b.example/2", publisher: "B", quote: "b" },
       ],
     });
-    const [sa] = getFact(db, a)!.sources;
-    const [sb1, sb2] = getFact(db, b)!.sources;
+    const [sa] = (await getFact(db, a))!.sources;
+    const [sb1, sb2] = (await getFact(db, b))!.sources;
     const at = new Date("2026-10-18T03:00:00Z");
 
-    recordResults(db, [
-      { sourceId: sa.id, status: 404 },
-      { sourceId: sb1.id, status: null },
-      { sourceId: sb2.id, status: 200 },
-    ], at);
-    const disputed = factsToDispute(factLinks(db));
-    markDisputed(db, disputed);
+    await recordResults(
+      db,
+      [
+        { sourceId: sa.id, status: 404 },
+        { sourceId: sb1.id, status: null },
+        { sourceId: sb2.id, status: 200 },
+      ],
+      at,
+    );
+    const disputed = factsToDispute(await factLinks(db));
+    await markDisputed(db, disputed);
 
     expect(disputed).toEqual([a]);
-    expect(getFact(db, a)!.status).toBe("disputed");
-    expect(getFact(db, b)!.status).toBe("verified");
-    expect(getFact(db, a)!.sources[0]).toMatchObject({ lastStatusCode: 404, lastCheckedAt: at });
+    expect((await getFact(db, a))!.status).toBe("disputed");
+    expect((await getFact(db, b))!.status).toBe("verified");
+    expect((await getFact(db, a))!.sources[0]).toMatchObject({ lastStatusCode: 404, lastCheckedAt: at });
   });
 });

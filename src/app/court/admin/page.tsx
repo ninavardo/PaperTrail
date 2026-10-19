@@ -36,7 +36,7 @@ export default async function CourtAdminPage() {
         <p className="mt-3 max-w-xl text-muted">
           Rulings may only cite sources already in the ledger. To cite something new, add it to a fact first.
         </p>
-        <ClaimForm sources={citableSources(getDb())} />
+        <ClaimForm sources={await citableSources(getDb())} />
       </article>
       <aside className="marginalia" aria-label="Session">
         <form action={logOut}>

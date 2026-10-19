@@ -24,7 +24,7 @@ export async function requestSubscription(_prev: SubscribeState, formData: FormD
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
   if (!limiter.hit(ip).allowed) return { status: "error", message: "Too many requests from this address. Try again later." };
 
-  const pending = subscribe(getDb(), parsed.data);
+  const pending = await subscribe(getDb(), parsed.data);
   if (pending) await sendEmail(confirmationEmail(pending, siteUrl()));
   // The same reply either way, so the form cannot be used to test which addresses are subscribed.
   return { status: "sent", message: SENT };
@@ -35,6 +35,6 @@ export type ConfirmState = { status: "idle" | "confirmed" | "invalid" };
 export async function confirmSubscription(_prev: ConfirmState, formData: FormData): Promise<ConfirmState> {
   const parsed = tokenParamsSchema.safeParse({ id: formData.get("id"), token: formData.get("token") });
   if (!parsed.success || !emailConfigured()) return { status: "invalid" };
-  const s = confirmSubscriber(getDb(), parsed.data.id, parsed.data.token, new Date());
+  const s = await confirmSubscriber(getDb(), parsed.data.id, parsed.data.token, new Date());
   return { status: s ? "confirmed" : "invalid" };
 }

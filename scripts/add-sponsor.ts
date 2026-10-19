@@ -5,7 +5,7 @@
  * Dates are UTC; the sponsor shows from --from (inclusive) until --to (exclusive).
  */
 import { z, ZodError } from "zod";
-import { databaseFile, openDb } from "@/db/client";
+import { getDb } from "@/db/client";
 import { createSponsor } from "@/lib/sponsors";
 
 function arg(name: string): string | undefined {
@@ -13,9 +13,8 @@ function arg(name: string): string | undefined {
   return process.argv.find((a) => a.startsWith(prefix))?.slice(prefix.length);
 }
 
-const { db, sqlite } = openDb(databaseFile());
-try {
-  const sponsor = createSponsor(db, {
+async function main(): Promise<void> {
+  const sponsor = await createSponsor(getDb(), {
     name: arg("name") ?? "",
     text: arg("text") ?? "",
     url: arg("url") ?? "",
@@ -25,9 +24,9 @@ try {
   console.log(
     `Added sponsor ${sponsor.id} (${sponsor.name}), active ${sponsor.activeFrom.toISOString()} to ${sponsor.activeTo.toISOString()}.`,
   );
-} catch (error) {
-  console.error(error instanceof ZodError ? z.prettifyError(error) : error);
-  process.exitCode = 1;
-} finally {
-  sqlite.close();
 }
+
+main().catch((error) => {
+  console.error(error instanceof ZodError ? z.prettifyError(error) : error);
+  process.exit(1);
+});

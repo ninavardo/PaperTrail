@@ -10,13 +10,14 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
-    "db:seed": "node --import tsx scripts/seed.ts",
+    "db:migrate": "node --env-file-if-exists=.env.local --import tsx src/db/migrate.ts",
+    "db:seed": "node --env-file-if-exists=.env.local --import tsx scripts/seed.ts",
     "email:send-daily": "node --env-file-if-exists=.env.local --import tsx scripts/send-daily.ts",
     "links:check": "node --env-file-if-exists=.env.local --import tsx scripts/check-links.ts",
     "sponsor:add": "node --env-file-if-exists=.env.local --import tsx scripts/add-sponsor.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "@libsql/client": "^0.18.0",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.2",
     "react": "19.3.0",
@@ -25,7 +26,6 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",

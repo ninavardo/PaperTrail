@@ -7,28 +7,28 @@ import { allFactYears, getDailyFact } from "./queries";
 
 export type TodayPuzzle = { fact: FactWithSources; puzzle: Puzzle; day: number };
 
-export function todaysPuzzle(db: Db, now: Date): TodayPuzzle | null {
-  const fact = getDailyFact(db, now);
+export async function todaysPuzzle(db: Db, now: Date): Promise<TodayPuzzle | null> {
+  const fact = await getDailyFact(db, now);
   if (!fact) return null;
   const day = utcDayNumber(now);
-  return { fact, day, puzzle: puzzleFor(fact, day, sliderRange(allFactYears(db))) };
+  return { fact, day, puzzle: puzzleFor(fact, day, sliderRange(await allFactYears(db))) };
 }
 
-export function guessToday(db: Db, anonId: string, factId: number, now: Date): Guess | null {
+export async function guessToday(db: Db, anonId: string, factId: number, now: Date): Promise<Guess | null> {
   return (
-    db
+    (await db
       .select()
       .from(guesses)
       .where(and(eq(guesses.anonId, anonId), eq(guesses.factId, factId), gte(guesses.createdAt, startOfUtcDay(now))))
       .orderBy(desc(guesses.id))
-      .get() ?? null
+      .get()) ?? null
   );
 }
 
-export function recordGuess(
+export async function recordGuess(
   db: Db,
   input: { anonId: string; fact: { id: number; year: number }; puzzle: Puzzle; guess: number; confidence: number; now: Date },
-): Guess {
+): Promise<Guess> {
   const scored = scoreGuess(input.puzzle, input.fact.year, input.guess);
   return db
     .insert(guesses)

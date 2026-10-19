@@ -15,15 +15,15 @@ export const metadata: Metadata = { title: "Today" };
 export default async function TodayPage() {
   const db = getDb();
   const now = new Date();
-  const today = todaysPuzzle(db, now);
+  const today = await todaysPuzzle(db, now);
   if (!today) {
     return <p className="meta">No verified entries are on file.</p>;
   }
 
   const anonId = await readAnonId();
-  const existing = anonId ? guessToday(db, anonId, today.fact.id, now) : null;
+  const existing = anonId ? await guessToday(db, anonId, today.fact.id, now) : null;
   const entryLabel = `Entry ${String(today.fact.id).padStart(3, "0")} · ${isoDay(now)}`;
-  const sponsor = activeSponsor(db, now);
+  const sponsor = await activeSponsor(db, now);
 
   return (
     <>

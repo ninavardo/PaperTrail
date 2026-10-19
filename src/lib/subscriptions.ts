@@ -41,9 +41,9 @@ export const tokenParamsSchema = z.object({
 });
 
 /** Returns the subscriber that should receive a confirmation email, or null if already confirmed. */
-export function subscribe(db: Db, email: string): Subscriber | null {
+export async function subscribe(db: Db, email: string): Promise<Subscriber | null> {
   const address = emailSchema.parse(email);
-  const existing = db
+  const existing = await db
     .select()
     .from(subscribers)
     .where(sql`${subscribers.email} = ${address} COLLATE NOCASE`)
@@ -52,26 +52,26 @@ export function subscribe(db: Db, email: string): Subscriber | null {
   return db.insert(subscribers).values({ email: address }).returning().get();
 }
 
-export function findSubscriber(db: Db, id: number): Subscriber | null {
-  return db.select().from(subscribers).where(eq(subscribers.id, id)).get() ?? null;
+export async function findSubscriber(db: Db, id: number): Promise<Subscriber | null> {
+  return (await db.select().from(subscribers).where(eq(subscribers.id, id)).get()) ?? null;
 }
 
-export function confirmSubscriber(db: Db, id: number, token: string, now: Date): Subscriber | null {
-  const s = findSubscriber(db, id);
+export async function confirmSubscriber(db: Db, id: number, token: string, now: Date): Promise<Subscriber | null> {
+  const s = await findSubscriber(db, id);
   if (!s || !tokenValid("confirm", s, token)) return null;
   if (s.confirmedAt) return s;
   return db.update(subscribers).set({ confirmedAt: now }).where(eq(subscribers.id, id)).returning().get();
 }
 
 /** Deletes the subscriber outright; no address is kept after unsubscribing. */
-export function unsubscribe(db: Db, id: number, token: string): boolean {
-  const s = findSubscriber(db, id);
+export async function unsubscribe(db: Db, id: number, token: string): Promise<boolean> {
+  const s = await findSubscriber(db, id);
   if (!s || !tokenValid("unsubscribe", s, token)) return false;
-  db.delete(subscribers).where(eq(subscribers.id, id)).run();
+  await db.delete(subscribers).where(eq(subscribers.id, id)).run();
   return true;
 }
 
-export function confirmedSubscribers(db: Db): Subscriber[] {
+export async function confirmedSubscribers(db: Db): Promise<Subscriber[]> {
   return db.select().from(subscribers).where(isNotNull(subscribers.confirmedAt)).all();
 }
 

@@ -19,14 +19,14 @@ export type ClaimInput = z.input<typeof claimInputSchema>;
 
 export class UnknownSourceError extends Error {}
 
-export function createClaim(db: Db, input: ClaimInput): number {
+export async function createClaim(db: Db, input: ClaimInput): Promise<number> {
   const claim = claimInputSchema.parse(input);
   const ids = [...new Set(claim.sourceIds)];
-  const found = db.select({ id: sources.id }).from(sources).where(inArray(sources.id, ids)).all();
+  const found = await db.select({ id: sources.id }).from(sources).where(inArray(sources.id, ids)).all();
   if (found.length !== ids.length) {
     throw new UnknownSourceError("Every cited source must exist.");
   }
-  const row = db
+  const row = await db
     .insert(claims)
     .values({ ...claim, sourceIds: ids })
     .returning({ id: claims.id })

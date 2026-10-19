@@ -11,7 +11,7 @@ export async function submitGuess(_prev: GuessState, formData: FormData): Promis
 
   const db = getDb();
   const now = new Date();
-  const today = todaysPuzzle(db, now);
+  const today = await todaysPuzzle(db, now);
   if (!today || today.fact.id !== form.factId) {
     return { reveal: null, error: "The day's entry has changed. Reload the page for the current one." };
   }
@@ -19,8 +19,8 @@ export async function submitGuess(_prev: GuessState, formData: FormData): Promis
 
   const anonId = await ensureAnonId();
   const guess =
-    guessToday(db, anonId, today.fact.id, now) ??
-    recordGuess(db, { anonId, fact: today.fact, puzzle: today.puzzle, guess: form.guess, confidence: form.confidence, now });
+    (await guessToday(db, anonId, today.fact.id, now)) ??
+    (await recordGuess(db, { anonId, fact: today.fact, puzzle: today.puzzle, guess: form.guess, confidence: form.confidence, now }));
 
   return { reveal: toReveal(today.fact, guess, today.puzzle), error: null };
 }

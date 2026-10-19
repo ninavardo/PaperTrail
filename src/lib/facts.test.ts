@@ -1,69 +1,85 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { Client } from "@libsql/client";
 import { openDb, type Db } from "@/db/client";
+import { migrate } from "@/db/migrate";
 import { SEED_FACTS } from "@/db/seed-data";
 import { createFact } from "./facts";
 import { MAX_QUOTE_WORDS, wordCount } from "./validation";
-import type Database from "better-sqlite3";
 
 const source = { url: "https://example.org/doc", publisher: "Example Archive", quote: "A short quote." };
 const fact = { sentence: "A sourced sentence.", category: "money", year: 1900, grade: "A" as const, sources: [source] };
 
 let db: Db;
-let sqlite: Database.Database;
+let client: Client;
 
-beforeEach(() => {
-  ({ db, sqlite } = openDb(":memory:"));
+beforeEach(async () => {
+  ({ db, client } = openDb(":memory:"));
+  await migrate(client);
 });
 
 describe("a fact requires a source", () => {
-  it("rejects zero sources in code", () => {
-    expect(() => createFact(db, { ...fact, sources: [] })).toThrow(/at least one source/);
+  it("rejects zero sources in code", async () => {
+    await expect(createFact(db, { ...fact, sources: [] })).rejects.toThrow(/at least one source/);
   });
 
-  it("rejects a sourceless fact in the database", () => {
-    expect(() =>
-      sqlite.prepare("INSERT INTO facts (sentence, category, year, grade) VALUES ('x', 'money', 1900, 'A')").run(),
-    ).toThrow(/requires at least one source/);
+  it("rejects a sourceless fact in the database", async () => {
+    await expect(
+      client.execute("INSERT INTO facts (sentence, category, year, grade) VALUES ('x', 'money', 1900, 'A')"),
+    ).rejects.toThrow(/requires at least one source/);
   });
 
-  it("refuses to delete a fact's last source", () => {
-    const id = createFact(db, fact);
-    expect(() => sqlite.prepare("DELETE FROM sources WHERE fact_id = ?").run(id)).toThrow(/last source/);
+  it("refuses to delete a fact's last source", async () => {
+    const id = await createFact(db, fact);
+    await expect(client.execute({ sql: "DELETE FROM sources WHERE fact_id = ?", args: [id] })).rejects.toThrow(
+      /last source/,
+    );
   });
 
-  it("refuses to move a fact's last source to another fact", () => {
-    const a = createFact(db, fact);
-    const b = createFact(db, fact);
-    expect(() => sqlite.prepare("UPDATE sources SET fact_id = ? WHERE fact_id = ?").run(b, a)).toThrow(/last source/);
+  it("refuses to move a fact's last source to another fact", async () => {
+    const a = await createFact(db, fact);
+    const b = await createFact(db, fact);
+    await expect(
+      client.execute({ sql: "UPDATE sources SET fact_id = ? WHERE fact_id = ?", args: [b, a] }),
+    ).rejects.toThrow(/last source/);
   });
 
-  it("allows removing one of several sources", () => {
-    const id = createFact(db, { ...fact, sources: [source, { ...source, url: "https://example.org/other" }] });
-    sqlite.prepare("DELETE FROM sources WHERE fact_id = ? AND url = 'https://example.org/other'").run(id);
-    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM sources WHERE fact_id = ?").get(id)).toEqual({ n: 1 });
+  it("allows removing one of several sources", async () => {
+    const id = await createFact(db, { ...fact, sources: [source, { ...source, url: "https://example.org/other" }] });
+    await client.execute({
+      sql: "DELETE FROM sources WHERE fact_id = ? AND url = 'https://example.org/other'",
+      args: [id],
+    });
+    const count = await client.execute({ sql: "SELECT COUNT(*) AS n FROM sources WHERE fact_id = ?", args: [id] });
+    expect(Number(count.rows[0].n)).toBe(1);
   });
 
-  it("deletes sources with their fact", () => {
-    const id = createFact(db, fact);
-    sqlite.prepare("DELETE FROM facts WHERE id = ?").run(id);
-    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM sources").get()).toEqual({ n: 0 });
+  it("deletes sources with their fact", async () => {
+    const id = await createFact(db, fact);
+    await client.execute({ sql: "DELETE FROM facts WHERE id = ?", args: [id] });
+    const count = await client.execute("SELECT COUNT(*) AS n FROM sources");
+    expect(Number(count.rows[0].n)).toBe(0);
   });
 });
 
 describe("length limits", () => {
-  it("rejects sentences over 200 characters in code and in the database", () => {
-    expect(() => createFact(db, { ...fact, sentence: "a".repeat(201) })).toThrow(/200 characters/);
-    const id = createFact(db, fact);
-    expect(() => sqlite.prepare("UPDATE facts SET sentence = ? WHERE id = ?").run("a".repeat(201), id)).toThrow(/CHECK/);
+  it("rejects sentences over 200 characters in code and in the database", async () => {
+    await expect(createFact(db, { ...fact, sentence: "a".repeat(201) })).rejects.toThrow(/200 characters/);
+    const id = await createFact(db, fact);
+    await expect(
+      client.execute({ sql: "UPDATE facts SET sentence = ? WHERE id = ?", args: ["a".repeat(201), id] }),
+    ).rejects.toThrow(/CHECK/);
   });
 
-  it("rejects quotes over 25 words in code and in the database", () => {
+  it("rejects quotes over 25 words in code and in the database", async () => {
     const long = Array(26).fill("word").join(" ");
-    expect(() => createFact(db, { ...fact, sources: [{ ...source, quote: long }] })).toThrow(/25 words/);
-    const id = createFact(db, fact);
-    expect(() =>
-      sqlite.prepare("INSERT INTO sources (fact_id, url, publisher, quote) VALUES (?, 'https://e.org', 'p', ?)").run(id, long),
-    ).toThrow(/CHECK/);
+    await expect(createFact(db, { ...fact, sources: [{ ...source, quote: long }] })).rejects.toThrow(/25 words/);
+    const id = await createFact(db, fact);
+    await expect(
+      client.execute({
+        sql: "INSERT INTO sources (fact_id, url, publisher, quote) VALUES (?, 'https://e.org', 'p', ?)",
+        args: [id, long],
+      }),
+    ).rejects.toThrow(/CHECK/);
   });
 });
 
@@ -79,8 +95,9 @@ describe("seed data", () => {
     }
   });
 
-  it("loads into the database without violating any constraint", () => {
-    for (const f of SEED_FACTS) createFact(db, f);
-    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM facts").get()).toEqual({ n: 40 });
+  it("loads into the database without violating any constraint", async () => {
+    for (const f of SEED_FACTS) await createFact(db, f);
+    const count = await client.execute("SELECT COUNT(*) AS n FROM facts");
+    expect(Number(count.rows[0].n)).toBe(40);
   });
 });

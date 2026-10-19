@@ -13,7 +13,7 @@ const pct = (n: number | null) => (n === null ? "—" : `${Math.round(n)}%`);
 
 export default async function MePage() {
   const anonId = await readAnonId();
-  const profile = anonId ? buildProfile(getDb(), anonId, new Date()) : null;
+  const profile = anonId ? await buildProfile(getDb(), anonId, new Date()) : null;
 
   if (!profile || profile.total === 0) {
     return (

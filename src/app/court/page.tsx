@@ -7,8 +7,8 @@ import { listClaims, type ClaimWithSources } from "@/lib/court";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Court of Claims" };
 
-export default function CourtPage() {
-  const claims = listClaims(getDb());
+export default async function CourtPage() {
+  const claims = await listClaims(getDb());
   const counts = {
     TRUE: claims.filter((c) => c.verdict === "TRUE").length,
     FALSE: claims.filter((c) => c.verdict === "FALSE").length,

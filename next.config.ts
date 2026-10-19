@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // Nearly every route reads the date, a cookie, or the database per request,
   // so routes opt into dynamic rendering explicitly instead of using Cache Components.
   cacheComponents: false,
-  serverExternalPackages: ["better-sqlite3"],
+  serverExternalPackages: ["@libsql/client"],
   // The embed script runs on other sites and loads these fonts cross-origin.
   async headers() {
     const crossOrigin = [

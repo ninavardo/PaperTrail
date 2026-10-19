@@ -9,7 +9,7 @@ import { factFromParam } from "@/lib/permalink";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/archive/[id]">): Promise<Metadata> {
-  const fact = factFromParam((await params).id);
+  const fact = await factFromParam((await params).id);
   if (!fact) return { title: "Entry not found" };
   const title = `Entry ${entryNumber(fact.id)}`;
   return {
@@ -28,7 +28,7 @@ const STATUS_NOTE = {
 } as const;
 
 export default async function EntryPage({ params }: PageProps<"/archive/[id]">) {
-  const fact = factFromParam((await params).id);
+  const fact = await factFromParam((await params).id);
   if (!fact) notFound();
 
   return (

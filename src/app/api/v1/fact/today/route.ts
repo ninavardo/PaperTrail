@@ -6,12 +6,12 @@ import { getDailyFact } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const GET = publicApi((request: NextRequest) => {
+export const GET = publicApi(async (request: NextRequest) => {
   const query = parseQuery(request, categoryQuerySchema);
   if (!query.ok) return query.response;
 
   const now = new Date();
-  const fact = getDailyFact(getDb(), now, query.data.category);
+  const fact = await getDailyFact(getDb(), now, query.data.category);
   if (!fact) return apiError(404, "not_found", "No verified fact in that category.");
 
   return Response.json(

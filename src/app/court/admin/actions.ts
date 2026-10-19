@@ -39,7 +39,7 @@ export async function addClaim(_prev: FormState, formData: FormData): Promise<Fo
   }
 
   try {
-    const id = createClaim(getDb(), parsed.data);
+    const id = await createClaim(getDb(), parsed.data);
     revalidatePath("/court");
     return { error: null, saved: id };
   } catch (e) {

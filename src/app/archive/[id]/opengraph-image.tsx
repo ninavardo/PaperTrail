@@ -24,7 +24,7 @@ const RULE = "#cfc8b4";
 const STAMP = "#b3261e";
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const fact = factFromParam((await params).id);
+  const fact = await factFromParam((await params).id);
   const [serif, mono, monoMedium] = await fonts;
 
   const sentence = fact?.sentence ?? "Entry not found.";

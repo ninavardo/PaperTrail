@@ -32,14 +32,14 @@ export function parseArchiveQuery(params: Record<string, string | string[] | und
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 /** Verified and disputed facts; retired facts keep their permalinks but leave the index. */
-export function searchArchive(db: Db, query: ArchiveQuery): FactWithSources[] {
+export async function searchArchive(db: Db, query: ArchiveQuery): Promise<FactWithSources[]> {
   const conditions: SQL[] = [inArray(facts.status, ["verified", "disputed"])];
   if (query.q) conditions.push(sql`${facts.sentence} LIKE ${`%${escapeLike(query.q)}%`} ESCAPE '\\'`);
   if (query.category) conditions.push(eq(facts.category, query.category));
   if (query.grade) conditions.push(eq(facts.grade, query.grade));
   if (query.from !== undefined) conditions.push(gte(facts.year, query.from));
   if (query.to !== undefined) conditions.push(lte(facts.year, query.to));
-  const rows = db
+  const rows = await db
     .select()
     .from(facts)
     .where(and(...conditions))
@@ -50,15 +50,15 @@ export function searchArchive(db: Db, query: ArchiveQuery): FactWithSources[] {
 
 export type ArchiveFacets = { categories: Array<{ category: string; count: number }>; minYear: number; maxYear: number };
 
-export function archiveFacets(db: Db): ArchiveFacets {
+export async function archiveFacets(db: Db): Promise<ArchiveFacets> {
   const listed = inArray(facts.status, ["verified", "disputed"]);
-  const categories = db
+  const categories = await db
     .select({ category: facts.category, count: count() })
     .from(facts)
     .where(listed)
     .groupBy(facts.category)
     .orderBy(asc(facts.category))
     .all();
-  const range = db.select({ lo: min(facts.year), hi: max(facts.year) }).from(facts).where(listed).get();
+  const range = await db.select({ lo: min(facts.year), hi: max(facts.year) }).from(facts).where(listed).get();
   return { categories, minYear: range?.lo ?? 0, maxYear: range?.hi ?? 0 };
 }

@@ -8,20 +8,20 @@ import { factInputSchema, type FactInput } from "./validation";
  * inside one transaction; the deferred foreign key and the facts_require_source
  * trigger reject any fact that ends up without a source.
  */
-export function createFact(db: Db, input: FactInput): number {
+export async function createFact(db: Db, input: FactInput): Promise<number> {
   const fact = factInputSchema.parse(input);
-  return db.transaction((tx) => {
-    const row = tx.get<{ next: number }>(
+  return db.transaction(async (tx) => {
+    const row = await tx.get<{ next: number }>(
       sql`SELECT COALESCE(MAX(n), 0) + 1 AS next FROM (
             SELECT seq AS n FROM sqlite_sequence WHERE name = 'facts'
             UNION ALL SELECT MAX(id) FROM facts
           )`,
     );
     const id = row.next;
-    tx.insert(sources)
+    await tx.insert(sources)
       .values(fact.sources.map((s) => ({ ...s, factId: id })))
       .run();
-    tx.insert(facts)
+    await tx.insert(facts)
       .values({
         id,
         sentence: fact.sentence,

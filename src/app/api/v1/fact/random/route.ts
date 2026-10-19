@@ -5,11 +5,11 @@ import { getRandomFact } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const GET = publicApi((request: NextRequest) => {
+export const GET = publicApi(async (request: NextRequest) => {
   const query = parseQuery(request, categoryQuerySchema);
   if (!query.ok) return query.response;
 
-  const fact = getRandomFact(getDb(), query.data.category);
+  const fact = await getRandomFact(getDb(), query.data.category);
   if (!fact) return apiError(404, "not_found", "No verified fact in that category.");
 
   return Response.json({ fact: toApiFact(fact, request.nextUrl.origin) }, { headers: { "Cache-Control": "no-store" } });

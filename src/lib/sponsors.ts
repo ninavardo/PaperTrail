@@ -15,19 +15,19 @@ export const sponsorInputSchema = z
 
 export type SponsorInput = z.input<typeof sponsorInputSchema>;
 
-export function createSponsor(db: Db, input: SponsorInput): Sponsor {
+export async function createSponsor(db: Db, input: SponsorInput): Promise<Sponsor> {
   return db.insert(sponsors).values(sponsorInputSchema.parse(input)).returning().get();
 }
 
 /** The one sponsor shown at `now`: active from activeFrom (inclusive) to activeTo (exclusive), earliest start first. */
-export function activeSponsor(db: Db, now: Date): Sponsor | null {
+export async function activeSponsor(db: Db, now: Date): Promise<Sponsor | null> {
   return (
-    db
+    (await db
       .select()
       .from(sponsors)
       .where(and(lte(sponsors.activeFrom, now), gt(sponsors.activeTo, now)))
       .orderBy(asc(sponsors.activeFrom), asc(sponsors.id))
       .limit(1)
-      .get() ?? null
+      .get()) ?? null
   );
 }

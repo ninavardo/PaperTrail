@@ -15,12 +15,12 @@ export async function submitReview(_prev: GuessState, formData: FormData): Promi
 
   const db = getDb();
   const now = new Date();
-  const item = reviewQueue(db, anonId, now).due.find((d) => d.fact.id === form.factId);
+  const item = (await reviewQueue(db, anonId, now)).due.find((d) => d.fact.id === form.factId);
   if (!item) return { reveal: null, error: "That entry is not due for review. Reload the page." };
 
-  const puzzle = reviewPuzzle(db, item.fact, now);
+  const puzzle = await reviewPuzzle(db, item.fact, now);
   if (!guessFitsPuzzle(puzzle, form.guess)) return { reveal: null, error: INVALID_GUESS };
 
-  const guess = recordGuess(db, { anonId, fact: item.fact, puzzle, guess: form.guess, confidence: form.confidence, now });
+  const guess = await recordGuess(db, { anonId, fact: item.fact, puzzle, guess: form.guess, confidence: form.confidence, now });
   return { reveal: toReveal(item.fact, guess, puzzle), error: null };
 }
